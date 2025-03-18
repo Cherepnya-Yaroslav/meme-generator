@@ -104,64 +104,6 @@ const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' })
         };
     }, []);
     
-    // Обработка изображения при его загрузке
-    useEffect(() => {
-        if (image && canvasInstance.current && canvasReady) {
-            console.log("Loading image to canvas");
-            
-            // Удаляем все объекты перед добавлением нового изображения
-            canvasInstance.current.clear();
-            
-            window.fabric.Image.fromURL(image, (img) => {
-                console.log("Image loaded successfully");
-                
-                if (!img) {
-                    console.error("Failed to create image object");
-                    return;
-                }
-                
-                // Делаем изображение невыделяемым
-                img.selectable = true;
-                
-                // Сохраняем ссылку на изображение
-                imageRef.current = img;
-                
-                // Применяем шаблон в зависимости от выбранного
-                applyTemplate();
-                
-                // Создаем верхний и нижний текст, если они уже заданы
-                updateTopText(topText);
-                updateBottomText(bottomText);
-                
-                canvasInstance.current.renderAll();
-            }, { crossOrigin: 'anonymous' });
-        }
-    }, [image, canvasReady]);
-    
-    // Обновление шаблона при его изменении
-    useEffect(() => {
-        if (canvasInstance.current && imageRef.current) {
-            applyTemplate();
-            canvasInstance.current.renderAll();
-        }
-    }, [template]);
-    
-    // Обновление верхнего текста при его изменении
-    useEffect(() => {
-        if (canvasInstance.current && image) {
-            updateTopText(topText);
-            canvasInstance.current.renderAll();
-        }
-    }, [topText, fontSize]);
-    
-    // Обновление нижнего текста при его изменении
-    useEffect(() => {
-        if (canvasInstance.current && image) {
-            updateBottomText(bottomText);
-            canvasInstance.current.renderAll();
-        }
-    }, [bottomText, fontSize]);
-    
     // Функция для применения шаблона
     const applyTemplate = () => {
         if (!canvasInstance.current || !imageRef.current) return;
@@ -272,35 +214,6 @@ const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' })
         });
     };
     
-    // Функция для обновления верхнего текста
-    const updateTopText = (text) => {
-        if (!canvasInstance.current) return;
-        
-        // Если есть предыдущий текст, удаляем его
-        if (topTextRef.current) {
-            canvasInstance.current.remove(topTextRef.current);
-        }
-        
-        if (text && template !== 'demotivator') {
-            // Создаем новый многострочный текст
-            topTextRef.current = createMultilineText(text.toUpperCase(), {
-                left: canvasSize / 2,
-                top: 20,
-                originX: 'center',
-                fontSize: fontSize,
-                fontWeight: 'bold',
-                fill: 'white',
-                stroke: 'black',
-                strokeWidth: 2,
-                strokeUniform: true,
-                textAlign: 'center'
-            });
-            
-            canvasInstance.current.add(topTextRef.current);
-            canvasInstance.current.bringToFront(topTextRef.current);
-        }
-    };
-    
     // Функция для обновления нижнего текста
     const updateBottomText = (text) => {
         if (!canvasInstance.current) return;
@@ -335,6 +248,93 @@ const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' })
             canvasInstance.current.bringToFront(bottomTextRef.current);
         }
     };
+    
+    // Функция для обновления верхнего текста
+    const updateTopText = (text) => {
+        if (!canvasInstance.current) return;
+        
+        // Если есть предыдущий текст, удаляем его
+        if (topTextRef.current) {
+            canvasInstance.current.remove(topTextRef.current);
+        }
+        
+        if (text && template !== 'demotivator') {
+            // Создаем новый многострочный текст
+            topTextRef.current = createMultilineText(text.toUpperCase(), {
+                left: canvasSize / 2,
+                top: 20,
+                originX: 'center',
+                fontSize: fontSize,
+                fontWeight: 'bold',
+                fill: 'white',
+                stroke: 'black',
+                strokeWidth: 2,
+                strokeUniform: true,
+                textAlign: 'center'
+            });
+            
+            canvasInstance.current.add(topTextRef.current);
+            canvasInstance.current.bringToFront(topTextRef.current);
+        }
+    };
+    
+    // Обработка изображения при его загрузке
+    useEffect(() => {
+        if (image && canvasInstance.current && canvasReady) {
+            console.log("Loading image to canvas");
+            
+            // Удаляем все объекты перед добавлением нового изображения
+            canvasInstance.current.clear();
+            
+            window.fabric.Image.fromURL(image, (img) => {
+                console.log("Image loaded successfully");
+                
+                if (!img) {
+                    console.error("Failed to create image object");
+                    return;
+                }
+                
+                // Делаем изображение невыделяемым
+                img.selectable = true;
+                
+                // Сохраняем ссылку на изображение
+                imageRef.current = img;
+                
+                // Применяем шаблон в зависимости от выбранного
+                applyTemplate();
+                
+                // Создаем верхний и нижний текст, если они уже заданы
+                updateTopText(topText);
+                updateBottomText(bottomText);
+                
+                canvasInstance.current.renderAll();
+            }, { crossOrigin: 'anonymous' });
+        }
+    }, [image, canvasReady, applyTemplate, bottomText, topText, updateBottomText, updateTopText]);
+    
+    // Обновление шаблона при его изменении
+    useEffect(() => {
+        if (canvasInstance.current && imageRef.current) {
+            applyTemplate();
+            canvasInstance.current.renderAll();
+        }
+    }, [template, applyTemplate]);
+    
+    // Обновление верхнего текста при его изменении
+    useEffect(() => {
+        if (canvasInstance.current && image) {
+            updateTopText(topText);
+            canvasInstance.current.renderAll();
+        }
+    }, [topText, fontSize, image, updateTopText]);
+    
+    // Обновление нижнего текста при его изменении
+    useEffect(() => {
+        if (canvasInstance.current && image) {
+            updateBottomText(bottomText);
+            canvasInstance.current.renderAll();
+        }
+    }, [bottomText, fontSize, image, updateBottomText]);
     
     return (
             <canvas 

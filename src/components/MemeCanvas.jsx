@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' }) => {
     const canvasRef = useRef(null);
@@ -104,8 +104,21 @@ const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' })
         };
     }, []);
     
+    // Функция для создания многострочного текста
+    const createMultilineText = useCallback((text, options) => {
+        // Заменяем \n на реальные переносы строк
+        const processedText = text.replace(/\\n/g, '\n');
+        
+        return new window.fabric.Textbox(processedText, {
+            ...options,
+            width: canvasSize * 0.9,
+            breakWords: true,
+            selectable: true
+        });
+    }, [canvasSize]);
+    
     // Функция для применения шаблона
-    const applyTemplate = () => {
+    const applyTemplate = useCallback(() => {
         if (!canvasInstance.current || !imageRef.current) return;
         
         // Удаляем предыдущие элементы шаблона
@@ -199,58 +212,10 @@ const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' })
             canvasInstance.current.add(imageRef.current);
             canvasInstance.current.add(demotivatorFrameRef.current);
         }
-    };
-    
-    // Функция для создания многострочного текста
-    const createMultilineText = (text, options) => {
-        // Заменяем \n на реальные переносы строк
-        const processedText = text.replace(/\\n/g, '\n');
-        
-        return new window.fabric.Textbox(processedText, {
-            ...options,
-            width: canvasSize * 0.9,
-            breakWords: true,
-            selectable: true
-        });
-    };
-    
-    // Функция для обновления нижнего текста
-    const updateBottomText = (text) => {
-        if (!canvasInstance.current) return;
-        
-        // Если есть предыдущий текст, удаляем его
-        if (bottomTextRef.current) {
-            canvasInstance.current.remove(bottomTextRef.current);
-        }
-        
-        // Для демотиватора нижний текст обрабатывается в applyTemplate
-        if (template === 'demotivator') {
-            applyTemplate();
-            return;
-        }
-        
-        if (text) {
-            // Создаем новый многострочный текст
-            bottomTextRef.current = createMultilineText(text.toUpperCase(), {
-                left: canvasSize / 2,
-                top: canvasSize - 20 - fontSize,
-                originX: 'center',
-                fontSize: fontSize,
-                fontWeight: 'bold',
-                fill: 'white',
-                stroke: 'black',
-                strokeWidth: 2,
-                strokeUniform: true,
-                textAlign: 'center'
-            });
-            
-            canvasInstance.current.add(bottomTextRef.current);
-            canvasInstance.current.bringToFront(bottomTextRef.current);
-        }
-    };
+    }, [bottomText, canvasSize, fontSize, template]);
     
     // Функция для обновления верхнего текста
-    const updateTopText = (text) => {
+    const updateTopText = useCallback((text) => {
         if (!canvasInstance.current) return;
         
         // Если есть предыдущий текст, удаляем его
@@ -276,7 +241,44 @@ const MemeCanvas = ({ image, topText, bottomText, fontSize, template = 'none' })
             canvasInstance.current.add(topTextRef.current);
             canvasInstance.current.bringToFront(topTextRef.current);
         }
-    };
+    }, [canvasSize, createMultilineText, fontSize, template]);
+    
+    // Функция для обновления нижнего текста
+    const updateBottomText = useCallback((text) => {
+        if (!canvasInstance.current) return;
+        
+        // Если есть предыдущий текст, удаляем его
+        if (bottomTextRef.current) {
+            canvasInstance.current.remove(bottomTextRef.current);
+        }
+        
+        // Для демотиватора нижний текст обрабатывается в applyTemplate
+        if (template === 'demotivator' && imageRef.current) {
+            // Вместо прямого вызова applyTemplate, который вызовет circular dependency
+            // просто перерисовываем шаблон, когда это демотиватор
+            canvasInstance.current.renderAll();
+            return;
+        }
+        
+        if (text) {
+            // Создаем новый многострочный текст
+            bottomTextRef.current = createMultilineText(text.toUpperCase(), {
+                left: canvasSize / 2,
+                top: canvasSize - 20 - fontSize,
+                originX: 'center',
+                fontSize: fontSize,
+                fontWeight: 'bold',
+                fill: 'white',
+                stroke: 'black',
+                strokeWidth: 2,
+                strokeUniform: true,
+                textAlign: 'center'
+            });
+            
+            canvasInstance.current.add(bottomTextRef.current);
+            canvasInstance.current.bringToFront(bottomTextRef.current);
+        }
+    }, [canvasSize, createMultilineText, fontSize, template]);
     
     // Обработка изображения при его загрузке
     useEffect(() => {
